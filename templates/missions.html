@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Papan Misi — CipherQuest{% endblock %}
+
+{% block content %}
+<div class="page-container missions-page">
+
+    <!-- Header Halaman -->
+    <div class="page-header">
+        <div class="header-badge-row">
+            <span class="badge badge-confidential">OPERATIONAL DIRECTIVE</span>
+            <span class="badge badge-classified">LEVEL ALPHA</span>
+        </div>
+        <h1 class="page-title">Papan Misi Intelijen</h1>
+        <p class="page-desc">
+            Pilih dan selesaikan misi pemecahan kode rahasia. Selesaikan setiap misi secara berurutan untuk membuka tingkat kesulitan berikutnya.
+        </p>
+    </div>
+
+    <!-- Progress Summary Banner -->
+    <div class="mission-summary-banner">
+        <div class="summary-item">
+            <span class="summary-lbl">TOTAL SKOR</span>
+            <span class="summary-val font-mono text-cyan">{{ stats.total_score }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+            <span class="summary-lbl">MISI SELESAI</span>
+            <span class="summary-val font-mono text-purple">{{ stats.completed_count }} / {{ stats.total_missions }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+            <span class="summary-lbl">STATUS PROGRES</span>
+            <span class="summary-val font-mono text-accent">{{ stats.progress_pct }}%</span>
+        </div>
+        <div class="summary-action">
+            <form action="{{ url_for('reset_user_progress') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mereset seluruh progres permainan? Skor dan status misi akan kembali ke awal.');">
+                <button type="submit" class="btn btn-sm btn-danger-outline" id="btn-reset-progress">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Reset Progres
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daftar Kartu Misi -->
+    <div class="missions-list">
+        {% for m in missions %}
+            <div class="mission-card mission-card-{{ m.status }}">
+                <div class="mission-card-header">
+                    <div class="mission-id-group">
+                        <span class="mission-code font-mono">{{ m.code }}</span>
+                        <span class="badge {{ m.difficulty_badge }}">{{ m.difficulty }}</span>
+                    </div>
+                    <div class="mission-status-pill status-{{ m.status }}">
+                        {% if m.status == 'completed' %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            Selesai (+{{ m.score }} Poin)
+                        {% elif m.status == 'available' %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Tersedia
+                        {% else %}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Terkunci
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mission-card-body">
+                    <h2 class="mission-card-title">{{ m.title }}</h2>
+                    <p class="mission-card-desc">{{ m.description }}</p>
+                    
+                    <div class="mission-objective-box">
+                        <div class="objective-label font-bold text-muted">TUJUAN PEMBELAJARAN:</div>
+                        <div class="objective-text">{{ m.learning_objective }}</div>
+                    </div>
+
+                    {% if m.status == 'completed' %}
+                        <div class="mission-completed-info">
+                            <span class="text-success font-bold">&#10003; Misi Telah Divalidasi</span>
+                            <span class="text-muted text-sm">(Percobaan: {{ m.attempts }} | Petunjuk: {{ 'Ya (-20)' if m.hints_used else 'Tidak' }})</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mission-card-footer">
+                    {% if m.is_unlocked %}
+                        <a href="{{ url_for('mission_detail', mission_id=m.id) }}" class="btn {% if m.status == 'completed' %}btn-outline{% else %}btn-primary{% endif %} btn-block" id="btn-play-mission-{{ m.id }}">
+                            {% if m.status == 'completed' %}
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                Ulangi Misi
+                            {% else %}
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Mulai Misi
+                            {% endif %}
+                        </a>
+                    {% else %}
+                        <button class="btn btn-disabled btn-block" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Terkunci — Selesaikan Misi Sebelumnya
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Free Practice Callout -->
+    <div class="practice-callout">
+        <div class="callout-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <div class="callout-content">
+            <h3 class="callout-title">Mode Latihan Bebas (Sandbox)</h3>
+            <p class="callout-text">
+                Ingin bereksperimen dengan kata atau angka sendiri tanpa batasan misi? Akses fasilitas Laboratorium Enkripsi dan Dekripsi kapan saja.
+            </p>
+        </div>
+        <div class="callout-actions">
+            <a href="{{ url_for('encrypt_lab') }}" class="btn btn-outline btn-sm">Lab Enkripsi</a>
+            <a href="{{ url_for('decrypt_lab') }}" class="btn btn-outline btn-sm">Lab Dekripsi</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

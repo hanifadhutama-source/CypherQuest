@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Akademi Kriptografi & Matematika — CipherQuest{% endblock %}
+
+{% block content %}
+<div class="page-container tutorial-page">
+
+    <!-- Header Halaman -->
+    <div class="page-header">
+        <div class="header-badge-row">
+            <span class="badge badge-confidential">TRAINING DIRECTIVE</span>
+            <span class="badge badge-classified">SMK MATHEMATICS</span>
+        </div>
+        <h1 class="page-title">Akademi Kriptografi & Komposisi Fungsi</h1>
+        <p class="page-desc">
+            Pelajari kaitan harmonis antara konsep matematika (Fungsi Linear, Komposisi Fungsi, dan Invers Fungsi) 
+            dengan sains kerahasiaan data (Kriptografi Enkripsi & Dekripsi).
+        </p>
+    </div>
+
+    <!-- Kotak Penafian Edukasi (Disclaimer) -->
+    <div class="intel-alert-box alert-notice">
+        <div class="alert-box-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div class="alert-box-content">
+            <div class="alert-box-title font-bold">Catatan Edukasi & Keamanan:</div>
+            <p class="alert-box-desc">
+                Sistem sandi linear pada CipherQuest dirancang khusus sebagai <strong>media simulasi dan pembelajaran matematika interaktif</strong> untuk siswa SMK. Pada dunia nyata dan industri digital modern, kriptografi menggunakan algoritma matematis tingkat lanjut yang jauh lebih kompleks (seperti RSA, AES-256, atau Elliptic Curve Cryptography) yang tahan terhadap analisis frekuensi statistik.
+            </p>
+        </div>
+    </div>
+
+    <!-- Bagian 1: Glosarium Dasar Kriptografi -->
+    <section class="tutorial-section">
+        <div class="section-title-wrap">
+            <span class="section-step-num font-mono">01</span>
+            <h2 class="section-title">Dasar Kriptografi: Terminologi Utama</h2>
+        </div>
+
+        <div class="concepts-grid">
+            <div class="concept-card">
+                <div class="concept-icon icon-cyan">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <h3 class="concept-title">Plainteks (Plaintext)</h3>
+                <p class="concept-text">
+                    Pesan asli yang belum disandikan dan dapat dibaca secara langsung oleh siapa pun dengan mudah (misalnya kata <code>"AKU"</code>).
+                </p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon icon-purple">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3 class="concept-title">Enkripsi (Encryption)</h3>
+                <p class="concept-text">
+                    Proses matematis mengubah plainteks menjadi pesan rahasia yang acak menggunakan rumus atau algoritma tertentu.
+                </p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon icon-accent">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <h3 class="concept-title">Cipherteks (Ciphertext)</h3>
+                <p class="concept-text">
+                    Teks atau deretan angka hasil enkripsi yang tidak dapat dipahami maknanya tanpa memiliki kunci dekripsi (misalnya <code>5 25 45</code>).
+                </p>
+            </div>
+
+            <div class="concept-card">
+                <div class="concept-icon icon-emerald">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                </div>
+                <h3 class="concept-title">Dekripsi (Decryption)</h3>
+                <p class="concept-text">
+                    Proses membalikkan cipherteks kembali menjadi plainteks awal menggunakan fungsi invers atau kunci rahasia yang sah.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bagian 2: Alur Diagram Proses -->
+    <section class="tutorial-section">
+        <div class="section-title-wrap">
+            <span class="section-step-num font-mono">02</span>
+            <h2 class="section-title">Diagram Arsitektur Alur Transformasi</h2>
+        </div>
+
+        <div class="workflow-diagrams-grid">
+            <!-- Diagram Enkripsi -->
+            <div class="diagram-card">
+                <div class="diagram-header">
+                    <span class="badge badge-primary">PROSES ENKRIPSI</span>
+                    <span class="diagram-sub font-mono">Plainteks &rarr; Cipherteks</span>
+                </div>
+                <div class="diagram-flow font-mono">
+                    <div class="flow-step step-origin">
+                        <span class="step-lbl">1. PLAINTEKS</span>
+                        <span class="step-example">Contoh: "AKU"</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-mapping">
+                        <span class="step-lbl">2. KONVERSI HURUF KE ANGKA</span>
+                        <span class="step-example">A=1, K=11, U=21</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-func-f">
+                        <span class="step-lbl">3. FUNGSI f(x) = 2x + 1</span>
+                        <span class="step-example">f(1)=3, f(11)=23, f(21)=43</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-func-g">
+                        <span class="step-lbl">4. FUNGSI g(f(x)) = f(x) + 2</span>
+                        <span class="step-example">g(3)=5, g(23)=25, g(43)=45</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-result text-accent">
+                        <span class="step-lbl">5. CIPHERTEKS AKHIR</span>
+                        <span class="step-example font-bold">5 25 45</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagram Dekripsi -->
+            <div class="diagram-card">
+                <div class="diagram-header">
+                    <span class="badge badge-secondary">PROSES DEKRIPSI</span>
+                    <span class="diagram-sub font-mono">Cipherteks &rarr; Plainteks</span>
+                </div>
+                <div class="diagram-flow font-mono">
+                    <div class="flow-step step-origin">
+                        <span class="step-lbl">1. CIPHERTEKS</span>
+                        <span class="step-example">Contoh: "5 25 45"</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-inv-func">
+                        <span class="step-lbl">2. FUNGSI INVERS: D(y) = (y - 3) / 2</span>
+                        <span class="step-example">(5-3)/2=1, (25-3)/2=11, (45-3)/2=21</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-mapping">
+                        <span class="step-lbl">3. KONVERSI ANGKA KE HURUF</span>
+                        <span class="step-example">1 &rarr; A, 11 &rarr; K, 21 &rarr; U</span>
+                    </div>
+                    <div class="flow-arrow">&darr;</div>
+                    <div class="flow-step step-result text-emerald">
+                        <span class="step-lbl">4. PLAINTEKS PULIH</span>
+                        <span class="step-example font-bold">"AKU"</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bagian 3: Pembuktian Matematis -->
+    <section class="tutorial-section">
+        <div class="section-title-wrap">
+            <span class="section-step-num font-mono">03</span>
+            <h2 class="section-title">Pembuktian Matematis Komposisi & Invers</h2>
+        </div>
+
+        <div class="math-deepdive-grid">
+            <!-- Box Komposisi -->
+            <div class="deepdive-card">
+                <h3 class="deepdive-title text-cyan">A. Menentukan Komposisi (g &#8728; f)(x)</h3>
+                <div class="math-proof-body font-mono">
+                    <p>Diketahui dua fungsi linear:</p>
+                    <div class="proof-line">f(x) = 2x + 1</div>
+                    <div class="proof-line">g(x) = x + 2</div>
+                    <p class="proof-note text-muted">Komposisi g bundaran f didefinisikan sebagai substitusi f(x) ke dalam variabel g:</p>
+                    <div class="proof-line">(g &#8728; f)(x) = g(f(x))</div>
+                    <div class="proof-line">(g &#8728; f)(x) = g(2x + 1)</div>
+                    <div class="proof-line">(g &#8728; f)(x) = (2x + 1) + 2</div>
+                    <div class="proof-box highlight-box text-accent">
+                        E(x) = (g &#8728; f)(x) = 2x + 3
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box Invers -->
+            <div class="deepdive-card">
+                <h3 class="deepdive-title text-emerald">B. Menentukan Invers Fungsi D(y)</h3>
+                <div class="math-proof-body font-mono">
+                    <p>Misalkan $y$ adalah nilai cipherteks hasil enkripsi:</p>
+                    <div class="proof-line">y = 2x + 3</div>
+                    <p class="proof-note text-muted">Untuk mencari fungsi invers, kita nyatakan x dalam y:</p>
+                    <div class="proof-line">y - 3 = 2x</div>
+                    <div class="proof-line">2x = y - 3</div>
+                    <div class="proof-line">x = (y - 3) / 2</div>
+                    <div class="proof-box highlight-box text-emerald">
+                        D(y) = (y - 3) / 2
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Box Pembuktian Kebalikan Identitas -->
+        <div class="identity-proof-card">
+            <div class="identity-header">
+                <span class="font-bold text-accent">MENGAPA FUNGSI INVERS MAMPU MEMULIHKAN PESAN ASLI?</span>
+            </div>
+            <div class="identity-body font-mono">
+                <p>Secara teori matematika, suatu fungsi memiliki invers jika dan hanya jika fungsi tersebut bijektif (satu-satu dan pada). Fungsi komposisi $E(x) = 2x + 3$ adalah fungsi linear bernilai riil yang bersifat bijektif.</p>
+                <div class="identity-calc">
+                    D(E(x)) = D(2x + 3) = \frac{(2x + 3) - 3}{2} = \frac{2x + 0}{2} = \frac{2x}{2} = x
+                </div>
+                <p class="identity-conclusion">
+                    Hasil operasi invers terhadap hasil enkripsi selalu menghasilkan nilai <strong>x</strong> semula. Inilah sebabnya seluruh pesan yang dienkripsi dapat dipulihkan 100% tanpa distorsi.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bagian 4: Tabel Alfabet Lengkap -->
+    <section class="tutorial-section">
+        <div class="section-title-wrap">
+            <span class="section-step-num font-mono">04</span>
+            <h2 class="section-title">Tabel Pemetaan Nilai Alfabet A=1 s.d. Z=26</h2>
+        </div>
+
+        <div class="scroll-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>Geser tabel ke samping untuk melihat seluruh 26 huruf &rarr;</span>
+        </div>
+        <div class="full-alphabet-table-wrap font-mono">
+            <table class="alpha-table">
+                <thead>
+                    <tr>
+                        {% for char_code in range(65, 78) %}
+                            <th>{{ char_code | chr }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {% for num in range(1, 14) %}
+                            <td class="text-cyan">{{ num }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="alpha-table mt-3">
+                <thead>
+                    <tr>
+                        {% for char_code in range(78, 91) %}
+                            <th>{{ char_code | chr }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {% for num in range(14, 27) %}
+                            <td class="text-purple">{{ num }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- CTA Buka Misi -->
+    <div class="tutorial-cta-box">
+        <h3 class="cta-title">Siap Menguji Kemampuan Analisis Kriptografi Anda?</h3>
+        <p class="cta-desc">Latih pemahaman komposisi dan invers fungsi pada skenario investigasi agen rahasia.</p>
+        <div class="cta-actions">
+            <a href="{{ url_for('missions') }}" class="btn btn-primary btn-lg">
+                Masuk ke Papan Misi &#8594;
+            </a>
+            <a href="{{ url_for('encrypt_lab') }}" class="btn btn-outline btn-lg">
+                Buka Lab Enkripsi
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

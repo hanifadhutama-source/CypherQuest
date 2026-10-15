@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}CipherQuest — Misi Rahasia Menantimu{% endblock %}
+
+{% block content %}
+<div class="page-container home-page">
+
+    <!-- Briefing Alert Bar -->
+    <section class="intel-briefing">
+        <div class="briefing-header">
+            <span class="blinking-dot"></span>
+            <span class="briefing-tag">TRANSMISI MASUK // PRIORITY ALPHA</span>
+            <span class="badge badge-classified">CLASSIFIED</span>
+        </div>
+        <div class="briefing-body">
+            <h3 class="briefing-title">AGEN, MISI BARU TELAH DITERIMA.</h3>
+            <p class="briefing-text">
+                Pesan rahasia telah dicegat oleh divisi intelijen. Gunakan pengetahuan tentang 
+                <strong>komposisi fungsi linear</strong> dan <strong>invers fungsi</strong> untuk membongkar sandi serta mengungkap pesan aslinya.
+            </p>
+        </div>
+    </section>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="agent-stamp">CYBER INTELLIGENCE AGENCY</div>
+            <h1 class="hero-title">
+                Decode the Message, <br>
+                <span class="gradient-text">Complete the Mission.</span>
+            </h1>
+            <p class="hero-desc">
+                Selamat datang di <strong>CipherQuest</strong> — Simulator kriptografi edukatif. Jelajahi kekuatan matematika di balik keamanan transmisi data: dari fungsi linear $f(x) = 2x + 1$ dan $g(x) = x + 2$, komposisi $(g \circ f)(x) = 2x + 3$, hingga fungsi invers pemulih sandi $D(x) = \frac{x - 3}{2}$.
+            </p>
+            <div class="hero-actions">
+                <a href="{{ url_for('missions') }}" class="btn btn-primary btn-lg" id="btn-hero-missions">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Mulai Misi
+                </a>
+                <a href="{{ url_for('tutorial') }}" class="btn btn-outline btn-lg" id="btn-hero-tutorial">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Pelajari Kriptografi
+                </a>
+            </div>
+        </div>
+
+        <!-- Visual Math Cyber Terminal -->
+        <div class="hero-terminal">
+            <div class="terminal-bar">
+                <div class="terminal-dots">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <div class="terminal-title">CIPHER_CORE_v1.0.exe</div>
+            </div>
+            <div class="terminal-body font-mono">
+                <div class="term-line text-muted">&gt; INITIALIZING CIPHERQUEST ENGINE...</div>
+                <div class="term-line text-cyan">&gt; FUNCTION_1 : f(x) = 2x + 1</div>
+                <div class="term-line text-purple">&gt; FUNCTION_2 : g(x) = x + 2</div>
+                <div class="term-line text-accent">&gt; COMPOSITION: (g &#8728; f)(x) = 2x + 3</div>
+                <div class="term-line text-emerald">&gt; INVERSE    : D(y) = (y - 3) / 2</div>
+                <div class="term-divider"></div>
+                <div class="term-line text-yellow">&gt; SAMPLE TEST: "AKU"</div>
+                <div class="term-line">&gt; A(1)  &#8594; 2(1)+3  = 5</div>
+                <div class="term-line">&gt; K(11) &#8594; 2(11)+3 = 25</div>
+                <div class="term-line">&gt; U(21) &#8594; 2(21)+3 = 45</div>
+                <div class="term-line text-success font-bold">&gt; CIPHERTEXT: [ 5  25  45 ] &#10003; VERIFIED</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Player Progress Dashboard -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Status Agen & Statistik Progres
+            </h2>
+            <span class="badge badge-outline">REAL-TIME TELEMETRY</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon icon-score">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number font-mono" id="dash-score">{{ stats.total_score }}</span>
+                    <span class="stat-label">Total Skor Intelijen</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-missions">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number font-mono" id="dash-completed">{{ stats.completed_count }} / {{ stats.total_missions }}</span>
+                    <span class="stat-label">Misi Terselesaikan</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-progress">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-number font-mono" id="dash-pct">{{ stats.progress_pct }}%</span>
+                    <span class="stat-label">Penyelesaian Misi</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" style="width: {{ stats.progress_pct }}%;"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon icon-last">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-status font-mono">{{ stats.last_mission }}</span>
+                    <span class="stat-label">Catatan Operasi Terakhir</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Kartu Fitur Utama -->
+    <section class="features-section">
+        <div class="section-header">
+            <h2 class="section-title">Modul Operasional CipherQuest</h2>
+            <p class="section-subtitle">Pilih fasilitas investigasi digital untuk memulai analisis atau latihan bebas.</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- Papan Misi -->
+            <div class="feature-card">
+                <div class="card-badge">CAMPAIGN</div>
+                <div class="card-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                </div>
+                <h3 class="card-title">Papan Misi Berjenjang</h3>
+                <p class="card-desc">
+                    Selesaikan 3 skenario investigasi: konversi alfabet, komposisi fungsi bertingkat, dan invers pemecah sandi dengan sistem skor interaktif.
+                </p>
+                <a href="{{ url_for('missions') }}" class="card-link">
+                    Buka Papan Misi &#8594;
+                </a>
+            </div>
+
+            <!-- Laboratorium Enkripsi -->
+            <div class="feature-card">
+                <div class="card-badge">LAB</div>
+                <div class="card-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3 class="card-title">Laboratorium Enkripsi</h3>
+                <p class="card-desc">
+                    Uji coba enkripsi pesan kustom secara bebas. Saksikan proses matematis f(x), g(x), dan (g &#8728; f)(x) terurai langkah demi langkah.
+                </p>
+                <a href="{{ url_for('encrypt_lab') }}" class="card-link">
+                    Eksplorasi Enkripsi &#8594;
+                </a>
+            </div>
+
+            <!-- Laboratorium Dekripsi -->
+            <div class="feature-card">
+                <div class="card-badge">LAB</div>
+                <div class="card-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                </div>
+                <h3 class="card-title">Laboratorium Dekripsi</h3>
+                <p class="card-desc">
+                    Masukkan kode cipherteks angka ganjil dan lihat bagaimana rumus invers D(y) = (y - 3) / 2 mengembalikan pesan rahasia secara sempurna.
+                </p>
+                <a href="{{ url_for('decrypt_lab') }}" class="card-link">
+                    Eksplorasi Dekripsi &#8594;
+                </a>
+            </div>
+
+            <!-- Akademi Kriptografi -->
+            <div class="feature-card">
+                <div class="card-badge">AKADEMI</div>
+                <div class="card-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <h3 class="card-title">Akademi Kriptografi</h3>
+                <p class="card-desc">
+                    Panduan belajar konsep kriptografi dasar: plainteks, cipherteks, sifat bijektif fungsi linear, dan pembuktian matematis D(E(x)) = x.
+                </p>
+                <a href="{{ url_for('tutorial') }}" class="card-link">
+                    Buka Panduan Tutorial &#8594;
+                </a>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

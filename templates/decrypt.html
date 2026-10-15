@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}Laboratorium Dekripsi — CipherQuest{% endblock %}
+
+{% block content %}
+<div class="page-container lab-page">
+
+    <!-- Header Halaman -->
+    <div class="page-header">
+        <div class="header-badge-row">
+            <span class="badge badge-confidential">CIPHER FACILITY</span>
+            <span class="badge badge-classified">DECRYPTION ENGINE</span>
+        </div>
+        <h1 class="page-title">Laboratorium Dekripsi Pesan</h1>
+        <p class="page-desc">
+            Pecahkan dan pulihkan pesan rahasia dari deretan angka cipherteks menggunakan fungsi invers matematika 
+            <span class="font-mono text-emerald">D(y) = (y - 3) / 2</span>.
+        </p>
+    </div>
+
+    <!-- Panel Rumus Invers Referensi -->
+    <div class="formula-banner-single">
+        <div class="formula-box inv-card">
+            <div class="formula-box-header">
+                <span class="formula-box-tag text-emerald">FUNGSI INVERS PEMULIH SANDI: D(y)</span>
+                <span class="badge badge-outline">BIJEKTIF 1-1</span>
+            </div>
+            <div class="formula-box-math font-mono">D(y) = (y - 3) / 2</div>
+            <div class="formula-box-sub text-muted">
+                Diturunkan dari: $y = 2x + 3 \iff y - 3 = 2x \iff x = \frac{y - 3}{2}$. Mengembalikan nilai alfabet asli $x \in [1, 26]$.
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Input & Kontrol -->
+    <div class="lab-main-card">
+        <form action="{{ url_for('decrypt_lab') }}" method="POST" id="decrypt-form">
+            <div class="form-group">
+                <div class="label-with-demo">
+                    <label for="ciphertext-input" class="form-label">
+                        Ketik Deretan Angka Cipherteks:
+                    </label>
+                    <button type="button" class="btn btn-sm btn-demo" id="btn-demo-cipher" onclick="setDemoCipher('5 25 45')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Gunakan Contoh "5 25 45" (AKU)
+                    </button>
+                </div>
+
+                <div class="input-container">
+                    <input type="text" 
+                           name="ciphertext" 
+                           id="ciphertext-input" 
+                           class="form-control font-mono" 
+                           placeholder="Masukkan angka dipisahkan spasi (contoh: 5 25 45 atau 5 25 45 | 7 19 41 5)" 
+                           value="{{ input_text }}" 
+                           required 
+                           autocomplete="off">
+                </div>
+                <small class="form-hint">
+                    Format: Angka-angka ganjil (5 s.d. 55) dipisahkan oleh spasi. Gunakan simbol '|' sebagai spasi pemisah antar kata.
+                </small>
+            </div>
+
+            <div class="form-btn-row">
+                <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-decrypt">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                    Dekripsi Pesan
+                </button>
+                <button type="button" class="btn btn-outline btn-lg" id="btn-reset-decrypt" onclick="resetDecryptForm()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Reset
+                </button>
+            </div>
+        </form>
+
+        <!-- Hasil Dekripsi -->
+        {% if result %}
+            {% if result.success %}
+                <div class="result-display-area" id="decryption-results">
+                    <div class="result-success-header">
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text font-bold text-success">DEKRIPSI BERHASIL DISELESAIKAN</span>
+                        </div>
+                        <span class="badge badge-classified">INTELLIGENCE REVEALED</span>
+                    </div>
+
+                    <div class="output-box-group">
+                        <label class="output-label">HASIL PESAN ASLI (PLAINTEKS):</label>
+                        <div class="output-display">
+                            <span class="ciphertext-text font-mono text-cyan" id="output-plaintext">{{ result.plaintext }}</span>
+                            <button type="button" class="btn btn-sm btn-copy" id="btn-copy-plaintext" onclick="copyToClipboard('output-plaintext', this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                <span>Salin Plainteks</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Accordion Langkah Perhitungan Invers -->
+                    <div class="accordion-section">
+                        <button type="button" class="accordion-toggle" id="btn-toggle-dec-steps" onclick="toggleAccordion('dec-steps-container', this)">
+                            <div class="accordion-title-group">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                <span class="font-bold">Lihat Rincian Langkah Perhitungan Invers (Dinamis)</span>
+                            </div>
+                            <span class="accordion-status">Buka / Tutup</span>
+                        </button>
+
+                        <div class="accordion-body" id="dec-steps-container">
+                            <div class="steps-intro">
+                                Menampilkan proses pembalikan setiap angka cipherteks $y$ ke rumus invers $D(y) = \frac{y - 3}{2}$, verifikasi keutuhan bilangan bulat $x \in [1, 26]$, hingga konversi ke huruf alfabet asli.
+                            </div>
+
+                            <div class="scroll-hint">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                                <span>Geser tabel langkah invers ke samping &rarr;</span>
+                            </div>
+                            <div class="steps-table-wrapper">
+                                <table class="steps-table font-mono">
+                                    <thead>
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Token Cipher ($y$)</th>
+                                            <th>Pengurangan: $(y - 3)$</th>
+                                            <th>Pembagian: $(y - 3)/2$</th>
+                                            <th>Hasil Nilai $x$</th>
+                                            <th>Konversi Huruf ($1 \to \text{A}$)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for step in result.steps %}
+                                            <tr class="{% if step.is_space %}row-space{% endif %}">
+                                                <td>{{ step.index }}</td>
+                                                <td>
+                                                    <span class="badge-token font-bold">{{ step.token }}</span>
+                                                </td>
+                                                <td class="text-cyan">{{ step.sub_calc }}</td>
+                                                <td class="text-purple">{{ step.div_calc }}</td>
+                                                <td class="text-accent font-bold">{{ step.inv_result }}</td>
+                                                <td class="final-cell">
+                                                    <span class="char-badge font-bold">{{ step.char }}</span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Penjelasan Rinci Per Token -->
+                            <div class="detailed-cards-grid">
+                                {% for step in result.steps %}
+                                    {% if not step.is_space %}
+                                        <div class="step-card">
+                                            <div class="step-card-header">
+                                                <span class="step-num font-mono">#{{ step.index }}</span>
+                                                <span class="step-letter font-bold font-mono">y = {{ step.y }}</span>
+                                                <span class="step-val text-emerald font-bold">&rarr; {{ step.char }}</span>
+                                            </div>
+                                            <div class="step-card-body">
+                                                <div class="step-calc-line">
+                                                    <span class="calc-label text-cyan">1. Kurangi 3:</span>
+                                                    <span class="calc-formula font-mono">{{ step.sub_calc }}</span>
+                                                </div>
+                                                <div class="step-calc-line">
+                                                    <span class="calc-label text-purple">2. Bagi 2:</span>
+                                                    <span class="calc-formula font-mono">{{ step.div_calc }}</span>
+                                                </div>
+                                                <div class="step-summary-line text-cyan font-bold">
+                                                    Huruf: {{ step.char }} (Posisi ke-{{ step.inv_result }})
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            {% else %}
+                <!-- Tampilan Pesan Error Validasi -->
+                <div class="error-panel">
+                    <div class="error-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span class="font-bold">Gagal Melakukan Dekripsi</span>
+                    </div>
+                    <p class="error-message">{{ result.error }}</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function setDemoCipher(val) {
+        const input = document.getElementById('ciphertext-input');
+        if (input) {
+            input.value = val;
+            input.focus();
+        }
+    }
+
+    function resetDecryptForm() {
+        const input = document.getElementById('ciphertext-input');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        const results = document.getElementById('decryption-results');
+        if (results) {
+            results.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

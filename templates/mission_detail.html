@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ mission.code }}: {{ mission.title }} — CipherQuest{% endblock %}
+
+{% block content %}
+<div class="page-container mission-detail-page">
+
+    <!-- Navigasi Kembali -->
+    <div class="breadcrumb-bar">
+        <a href="{{ url_for('missions') }}" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Kembali ke Papan Misi
+        </a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-curr">{{ mission.code }}</span>
+    </div>
+
+    <!-- Header Misi -->
+    <div class="mission-header-card">
+        <div class="mission-meta-row">
+            <span class="mission-badge font-mono">{{ mission.code }}</span>
+            <span class="badge {{ mission.difficulty_badge }}">{{ mission.difficulty }}</span>
+            <span class="badge badge-classified">OPERASI AKTIF</span>
+        </div>
+        <h1 class="mission-title">{{ mission.title }}</h1>
+        <p class="mission-lead">{{ mission.description }}</p>
+    </div>
+
+    <div class="mission-layout-grid">
+        <!-- Kolom Kiri: Briefing & Input Jawaban -->
+        <div class="mission-main-col">
+            <!-- Target Card -->
+            <div class="intel-card target-card">
+                <div class="intel-card-header">
+                    <span class="card-icon-dot"></span>
+                    <h3 class="intel-card-title">DATA TARGET YANG DICEGAT</h3>
+                </div>
+                <div class="target-data-box">
+                    <div class="target-label">
+                        {% if mission.id == 3 %}
+                            CIPHERTEKS TERSANDI:
+                        {% else %}
+                            PESAN ASLI (PLAINTEKS):
+                        {% endif %}
+                    </div>
+                    <div class="target-value font-mono">{{ mission.target_input }}</div>
+                </div>
+                <div class="target-instruction">
+                    <strong>Instruksi Operasi:</strong> {{ mission.prompt_question }}
+                </div>
+            </div>
+
+            <!-- Petunjuk Intelijen (Hint Box) -->
+            <div class="intel-card hint-card" id="hint-section">
+                <div class="hint-header">
+                    <div class="hint-title-group">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span class="font-bold">Bantuan Intelijen (Petunjuk)</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-warning-outline" id="btn-toggle-hint">
+                        Buka Petunjuk (-20 Poin)
+                    </button>
+                </div>
+                <div class="hint-content" id="hint-content" style="display: none;">
+                    <div class="hint-alert">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span>Petunjuk diaktifkan! Skor maksimal untuk misi ini menjadi 80 poin.</span>
+                    </div>
+                    <p class="hint-text font-mono">{{ mission.hint }}</p>
+                </div>
+            </div>
+
+            <!-- Formulir Jawaban -->
+            <div class="intel-card form-card">
+                <div class="intel-card-header">
+                    <span class="card-icon-dot"></span>
+                    <h3 class="intel-card-title">TERMINAL VERIFIKASI JAWABAN</h3>
+                </div>
+                <form action="{{ url_for('mission_detail', mission_id=mission.id) }}" method="POST" id="mission-form">
+                    <input type="hidden" name="used_hint" id="input-used-hint" value="0">
+                    
+                    <div class="form-group">
+                        <label for="mission-answer" class="form-label">
+                            Masukkan Hasil Perhitungan Anda:
+                        </label>
+                        <div class="input-container">
+                            <input type="text" 
+                                   name="answer" 
+                                   id="mission-answer" 
+                                   class="form-control font-mono" 
+                                   placeholder="{% if mission.id == 3 %}Contoh: SECRET{% else %}Contoh: 41 35 53{% endif %}" 
+                                   required 
+                                   autocomplete="off">
+                        </div>
+                        <small class="form-hint">
+                            {% if mission.id == 3 %}
+                                Ketikkan kata alfabet hasil dekripsi (huruf besar/kecil diterima).
+                            {% else %}
+                                Ketikkan angka hasil enkripsi yang dipisahkan spasi tunggal.
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-answer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Kirim Verifikasi Jawaban
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Referensi Matematika & Tabel Konversi -->
+        <div class="mission-side-col">
+            <!-- Rumus Kunci -->
+            <div class="side-card">
+                <h4 class="side-card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Rumus Matematika Acuan
+                </h4>
+                <div class="formula-stack font-mono">
+                    <div class="f-item">
+                        <span class="f-name">Fungsi f:</span>
+                        <span class="f-code text-cyan">f(x) = 2x + 1</span>
+                    </div>
+                    <div class="f-item">
+                        <span class="f-name">Fungsi g:</span>
+                        <span class="f-code text-purple">g(x) = x + 2</span>
+                    </div>
+                    <div class="f-item highlight">
+                        <span class="f-name">Komposisi:</span>
+                        <span class="f-code text-accent">(g &#8728; f)(x) = 2x + 3</span>
+                    </div>
+                    <div class="f-item highlight-inv">
+                        <span class="f-name">Invers:</span>
+                        <span class="f-code text-emerald">D(y) = (y - 3) / 2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Bantuan Alfabet -->
+            <div class="side-card">
+                <div class="side-card-header-toggle" id="toggle-alphabet-table">
+                    <h4 class="side-card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                        Tabel Konversi Huruf (A-Z)
+                    </h4>
+                </div>
+                <div class="alphabet-mini-grid font-mono">
+                    <div class="alpha-cell"><span>A</span>=1</div>
+                    <div class="alpha-cell"><span>B</span>=2</div>
+                    <div class="alpha-cell"><span>C</span>=3</div>
+                    <div class="alpha-cell"><span>D</span>=4</div>
+                    <div class="alpha-cell"><span>E</span>=5</div>
+                    <div class="alpha-cell"><span>F</span>=6</div>
+                    <div class="alpha-cell"><span>G</span>=7</div>
+                    <div class="alpha-cell"><span>H</span>=8</div>
+                    <div class="alpha-cell"><span>I</span>=9</div>
+                    <div class="alpha-cell"><span>J</span>=10</div>
+                    <div class="alpha-cell"><span>K</span>=11</div>
+                    <div class="alpha-cell"><span>L</span>=12</div>
+                    <div class="alpha-cell"><span>M</span>=13</div>
+                    <div class="alpha-cell"><span>N</span>=14</div>
+                    <div class="alpha-cell"><span>O</span>=15</div>
+                    <div class="alpha-cell"><span>P</span>=16</div>
+                    <div class="alpha-cell"><span>Q</span>=17</div>
+                    <div class="alpha-cell"><span>R</span>=18</div>
+                    <div class="alpha-cell"><span>S</span>=19</div>
+                    <div class="alpha-cell"><span>T</span>=20</div>
+                    <div class="alpha-cell"><span>U</span>=21</div>
+                    <div class="alpha-cell"><span>V</span>=22</div>
+                    <div class="alpha-cell"><span>W</span>=23</div>
+                    <div class="alpha-cell"><span>X</span>=24</div>
+                    <div class="alpha-cell"><span>Y</span>=25</div>
+                    <div class="alpha-cell"><span>Z</span>=26</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
