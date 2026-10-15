@@ -11,6 +11,7 @@ Tanggung jawab:
 
 import os
 import sqlite3
+import tempfile
 from typing import Dict, List, Any, Optional
 
 MISSIONS_DATA = [
@@ -60,13 +61,28 @@ MISSIONS_DATA = [
 
 
 def get_db_path() -> str:
+    """Mengembalikan path file database SQLite dengan fallback aman untuk serverless."""
+    # 1. Lingkungan serverless Vercel / AWS Lambda
+    if os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('LAMBDA_TASK_ROOT'):
+        return os.path.join(tempfile.gettempdir(), 'cipherquest.db')
+
     base_dir = os.path.abspath(os.path.dirname(__file__))
     instance_dir = os.path.join(base_dir, 'instance')
-    os.makedirs(instance_dir, exist_ok=True)
-    return os.path.join(instance_dir, 'cipherquest.db')
+    
+    # 2. Coba direktori instance lokal jika writable
+    try:
+        os.makedirs(instance_dir, exist_ok=True)
+        test_file = os.path.join(instance_dir, '.write_test')
+        with open(test_file, 'w') as f:
+            f.write('')
+        os.remove(test_file)
+        return os.path.join(instance_dir, 'cipherquest.db')
+    except (OSError, IOError, PermissionError):
+        # Fallback ke temp directory jika direktori proyek read-only
+        return os.path.join(tempfile.gettempdir(), 'cipherquest.db')
 
 
-def get_db_connection() -> sqlite3.Connection:
+def _raw_db_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(get_db_path())
     conn.row_factory = sqlite3.Row
     return conn
@@ -74,7 +90,7 @@ def get_db_connection() -> sqlite3.Connection:
 
 def init_db():
     """Membuat tabel database jika belum ada."""
-    conn = get_db_connection()
+    conn = _raw_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS player_progress (
@@ -91,6 +107,13 @@ def init_db():
     """)
     conn.commit()
     conn.close()
+
+
+def get_db_connection() -> sqlite3.Connection:
+    db_path = get_db_path()
+    if not os.path.exists(db_path):
+        init_db()
+    return _raw_db_connection()
 
 
 def get_player_stats(session_id: str) -> Dict[str, Any]:

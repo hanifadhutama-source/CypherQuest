@@ -25,7 +25,10 @@ app.jinja_env.filters['chr'] = chr
 
 # Inisialisasi Database saat aplikasi dijalankan
 with app.app_context():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        app.logger.warning("Inisialisasi database awal ditangguhkan: %s", str(e))
 
 
 @app.before_request
