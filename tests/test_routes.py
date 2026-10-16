@@ -90,6 +90,7 @@ def test_mission_dynamic_persistence_and_flow(client):
     # Buat session identity
     with client.session_transaction() as sess:
         sess['player_id'] = 'test_agent_007'
+    reset_progress('test_agent_007')
 
     # Akses misi 1
     resp_m1 = client.get('/mission/1')
