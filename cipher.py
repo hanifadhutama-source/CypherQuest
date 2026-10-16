@@ -2,145 +2,203 @@
 cipher.py - Modul Logika Matematika Inti CipherQuest
 
 Materi:
-- Fungsi linear f(x) = 2x + 1
-- Fungsi linear g(x) = x + 2
-- Komposisi fungsi (g o f)(x) = g(f(x)) = 2x + 3
-- Invers fungsi D(x) = (x - 3) / 2
-- Konversi A=1 ... Z=26
+- Fungsi linear f(x) = ax + b  (default: a=2, b=1)
+- Fungsi linear g(x) = x + 2   (tetap, konstanta materi kelas)
+- Komposisi fungsi (g o f)(x)  = g(f(x)) = ax + (b + 2)
+- Invers fungsi D(y) = (y - (b+2)) / a
+- Pemetaan karakter diperluas:
+    Huruf kapital A–Z  → x =  1 ..  26  (positif)
+    Huruf kecil   a–z  → x = -1 .. -26  (negatif)
+    Spasi              → x = 0
+
+Catatan matematis:
+  E(x) = ax + (b+2) selalu invertibel jika a ≠ 0.
+  D(E(x)) = (ax+(b+2)-(b+2))/a = x  → selalu tepat, tidak ada pembulatan.
+  Tidak ada tabrakan kode karena E bijektif (satu-ke-satu).
+  Untuk a=2, b=1:  E(x) = 2x+3, D(y) = (y-3)/2.
+  Setiap output E adalah ganjil → validasi paritas membantu mendeteksi input rusak.
 """
 
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, Dict, Any
 
+
+# ─── Konstanta Default (Materi Kelas) ────────────────────────────────────────
+DEFAULT_A = 2   # koefisien f(x) = ax + b
+DEFAULT_B = 1   # konstanta  f(x) = ax + b
+G_CONST = 2     # g(x) = x + G_CONST  (tetap, sesuai kurikulum)
+
+
+# ─── Pemetaan Karakter ────────────────────────────────────────────────────────
 
 def char_to_num(char: str) -> int:
     """
-    Mengonversi satu huruf alfabet (A-Z atau a-z) menjadi angka (1-26).
-    A/a = 1, B/b = 2, ..., Z/z = 26.
-    Jika bukan alfabet, memunculkan ValueError.
+    Pemetaan karakter ke bilangan bulat (diperluas).
+
+    Kapital A–Z  →  1 ..  26   (positif)
+    Kecil   a–z  → -1 .. -26   (negatif)
+    Spasi        →  0
+
+    Raises:
+        ValueError: jika karakter tidak didukung.
     """
     if not isinstance(char, str) or len(char) != 1:
         raise ValueError("Input harus berupa satu karakter string.")
-    
-    char_upper = char.upper()
-    if 'A' <= char_upper <= 'Z':
-        return ord(char_upper) - ord('A') + 1
-    raise ValueError(f"Karakter '{char}' tidak valid. Hanya alfabet A-Z yang didukung.")
+    if char == ' ':
+        return 0
+    if char.isupper() and char.isalpha():
+        return ord(char) - ord('A') + 1   #  1..26
+    if char.islower() and char.isalpha():
+        return -(ord(char) - ord('a') + 1)  # -1..-26
+    raise ValueError(
+        f"Karakter '{char}' tidak didukung. "
+        "Sistem mendukung A–Z (kapital → positif), a–z (kecil → negatif), dan spasi (→ 0)."
+    )
 
 
-def num_to_char(num: int, uppercase: bool = True) -> str:
+def num_to_char(num: int) -> str:
     """
-    Mengonversi angka 1-26 menjadi huruf alfabet.
-    1 -> 'A', 26 -> 'Z'.
-    Jika angka di luar rentang 1-26, memunculkan ValueError.
+    Konversi bilangan bulat ke karakter (kebalikan char_to_num).
+
+     1..26 → A..Z
+    -1..-26 → a..z
+    0 → ' ' (spasi)
+
+    Raises:
+        ValueError: jika num di luar rentang.
     """
     if not isinstance(num, int):
         raise ValueError("Input harus berupa bilangan bulat (integer).")
-    if not (1 <= num <= 26):
-        raise ValueError(f"Nilai {num} di luar rentang alfabet (1-26).")
-    
-    base_char = 'A' if uppercase else 'a'
-    return chr(ord(base_char) + (num - 1))
+    if num == 0:
+        return ' '
+    if 1 <= num <= 26:
+        return chr(ord('A') + num - 1)
+    if -26 <= num <= -1:
+        return chr(ord('a') + (-num) - 1)
+    raise ValueError(f"Nilai {num} di luar rentang pemetaan yang valid (-26..0..26).")
 
 
-def f(x: int) -> int:
+# ─── Fungsi Matematika ────────────────────────────────────────────────────────
+
+def f(x: int, a: int = DEFAULT_A, b: int = DEFAULT_B) -> int:
     """
-    Fungsi linear pertama:
-    f(x) = 2x + 1
+    Fungsi linear pertama:  f(x) = ax + b
+    Default: a=2, b=1  →  f(x) = 2x + 1
     """
     if not isinstance(x, (int, float)):
         raise TypeError("Input x harus berupa bilangan.")
-    return 2 * x + 1
+    return a * x + b
 
 
 def g(x: int) -> int:
     """
-    Fungsi linear kedua:
+    Fungsi linear kedua (tetap sesuai kurikulum):
     g(x) = x + 2
     """
     if not isinstance(x, (int, float)):
         raise TypeError("Input x harus berupa bilangan.")
-    return x + 2
+    return x + G_CONST
 
 
-def g_comp_f(x: int) -> int:
+def g_comp_f(x: int, a: int = DEFAULT_A, b: int = DEFAULT_B) -> int:
     """
     Fungsi komposisi (g o f)(x) = g(f(x)):
-    g(f(x)) = g(2x + 1) = (2x + 1) + 2 = 2x + 3
+    g(f(x)) = g(ax + b) = (ax + b) + 2 = ax + (b + 2)
     """
-    return g(f(x))
+    return g(f(x, a, b))
 
 
-def encrypt_val(x: int) -> int:
+def encrypt_val(x: int, a: int = DEFAULT_A, b: int = DEFAULT_B) -> int:
     """
-    Fungsi enkripsi gabungan E(x) = (g o f)(x) = 2x + 3.
-    Menggunakan komposisi g(f(x)) secara eksplisit.
+    Fungsi enkripsi gabungan:
+    E(x) = (g o f)(x) = ax + (b + 2)
     """
-    return g_comp_f(x)
+    return g_comp_f(x, a, b)
 
 
-def inv_comp(y: Union[int, float]) -> float:
+def inv_comp(y: Union[int, float], a: int = DEFAULT_A, b: int = DEFAULT_B) -> float:
     """
-    Fungsi invers dari komposisi E(x) = 2x + 3:
-    y = 2x + 3
-    x = 2y + 3
-    x - 3 = 2y
-    y = (x - 3) / 2
-    D(x) = (x - 3) / 2
+    Fungsi invers dari komposisi E(x) = ax + (b+2):
+    y = ax + (b+2)  →  x = (y - (b+2)) / a
+    D(y) = (y - (b+2)) / a
+
+    Raises:
+        ValueError: jika a = 0 (tidak dapat dibalikkan).
     """
+    if a == 0:
+        raise ValueError("Koefisien a tidak boleh 0 — fungsi tidak dapat dibalikkan.")
     if not isinstance(y, (int, float)):
         raise TypeError("Input y harus berupa bilangan.")
-    return (y - 3) / 2
+    return (y - (b + G_CONST)) / a
 
 
-def decrypt_val(y: int) -> int:
+def decrypt_val(y: int, a: int = DEFAULT_A, b: int = DEFAULT_B) -> int:
     """
-    Mendekripsi nilai cipherteks y menggunakan fungsi invers D(y) = (y - 3) / 2.
-    Melakukan validasi ketat:
-    - y harus bilangan bulat
-    - y harus bernilai ganjil
-    - y harus berada dalam rentang [5, 55] (karena x dalam 1-26)
-    - Hasil invers harus bilangan bulat 1-26
-    """
-    if not isinstance(y, int):
-        raise ValueError(f"Nilai cipherteks '{y}' harus berupa bilangan bulat.")
-    
-    # Validasi rentang nilai enkripsi untuk x in [1, 26]: E(1)=5 s.d. E(26)=55
-    if y < 5 or y > 55:
-        raise ValueError(f"Nilai cipherteks {y} berada di luar batas valid (5 - 55).")
-    
-    # Validasi paritas ganjil karena E(x) = 2x + 3 selalu ganjil
-    if y % 2 == 0:
-        raise ValueError(f"Nilai cipherteks {y} tidak valid (bilangan genap tidak mungkin dihasilkan oleh 2x+3).")
-    
-    inv_result = inv_comp(y)
-    
-    # Periksa apakah hasil merupakan bilangan bulat murni
-    if inv_result != int(inv_result):
-        raise ValueError(f"Hasil invers {inv_result} bukan bilangan bulat.")
-    
-    orig_x = int(inv_result)
-    if not (1 <= orig_x <= 26):
-        raise ValueError(f"Hasil invers {orig_x} di luar rentang alfabet (1-26).")
-    
-    return orig_x
+    Mendekripsi nilai cipherteks y dengan parameter (a, b).
+    Mengembalikan nilai integer x yang terpeta ke karakter.
 
+    Validasi:
+    - D(y) harus menghasilkan bilangan bulat tepat (bukan pecahan).
+    - Hasil x harus dalam rentang valid (-26..0..26).
+
+    Raises:
+        ValueError: jika y tidak dapat didekripsi menjadi simbol valid.
+    """
+    if a == 0:
+        raise ValueError("Koefisien a tidak boleh 0.")
+    raw = inv_comp(y, a, b)
+    if abs(raw - round(raw)) > 1e-9:
+        raise ValueError(
+            f"Nilai cipherteks {y} tidak menghasilkan bilangan bulat "
+            f"dengan parameter a={a}, b={b}: D({y}) = {raw}."
+        )
+    x = int(round(raw))
+    if not (-26 <= x <= 26):
+        raise ValueError(
+            f"Hasil invers x = {x} di luar rentang pemetaan yang valid (-26..0..26)."
+        )
+    return x
+
+
+# ─── Utilitas ────────────────────────────────────────────────────────────────
 
 def validate_character_support(char: str) -> bool:
     """
-    Memeriksa apakah karakter didukung oleh sistem (A-Z, a-z, spasi).
+    Memeriksa apakah karakter didukung oleh sistem:
+    A–Z, a–z, dan spasi.
     """
-    return char.isalpha() or char == ' '
+    return (char.isalpha() and char.isascii()) or char == ' '
 
 
-def get_formula_metadata() -> dict:
+def get_formula_metadata(a: int = DEFAULT_A, b: int = DEFAULT_B) -> Dict[str, Any]:
     """
-    Mengembalikan metadata informasi rumus untuk ditampilkan di UI.
+    Mengembalikan metadata rumus matematis berdasarkan parameter a dan b.
+
+    Args:
+        a: Koefisien f(x) = ax + b.
+        b: Konstanta f(x) = ax + b.
+
+    Returns:
+        dict berisi string rumus untuk ditampilkan di UI.
     """
+    c = b + G_CONST   # konstanta komposisi: E(x) = ax + c
+    f_str = f"f(x) = {a}x + {b}" if b >= 0 else f"f(x) = {a}x - {abs(b)}"
+    g_str = f"g(x) = x + {G_CONST}"
+    comp_str = (
+        f"(g ∘ f)(x) = g({a}x + {b}) = ({a}x + {b}) + {G_CONST} = {a}x + {c}"
+        if c >= 0
+        else f"(g ∘ f)(x) = g({a}x + {b}) = ({a}x + {b}) + {G_CONST} = {a}x - {abs(c)}"
+    )
+    enc_str = f"E(x) = {a}x + {c}" if c >= 0 else f"E(x) = {a}x - {abs(c)}"
+    inv_str = f"D(y) = (y - {c}) / {a}" if c >= 0 else f"D(y) = (y + {abs(c)}) / {a}"
     return {
-        "f_formula": "f(x) = 2x + 1",
-        "g_formula": "g(x) = x + 2",
-        "comp_formula": "(g \u2218 f)(x) = g(f(x)) = (2x + 1) + 2 = 2x + 3",
-        "encrypt_formula": "E(x) = 2x + 3",
-        "inv_formula": "D(x) = (x - 3) / 2",
-        "valid_range": "x \u2208 [1, 26] \u2192 E(x) \u2208 [5, 55] (ganjil)"
+        "a": a,
+        "b": b,
+        "c": c,
+        "g_const": G_CONST,
+        "f_formula": f_str,
+        "g_formula": g_str,
+        "comp_formula": comp_str,
+        "encrypt_formula": enc_str,
+        "inv_formula": inv_str,
+        "valid_range": "x ∈ {-26..0..26} → kapital, kecil, spasi",
     }

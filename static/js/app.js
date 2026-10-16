@@ -202,3 +202,66 @@ function toggleAccordion(bodyId, toggleBtn) {
         }
     }
 }
+
+/**
+ * 5. LocalStorage Game Progress Synchronization
+ * Menyimpan progres pemain di browser klien untuk keandalan serverless Vercel
+ */
+const STORAGE_KEY = 'cipherquest_player_progress_v2';
+
+function saveLocalProgress(data) {
+    try {
+        const current = getLocalProgress() || {};
+        const merged = { ...current, ...data, lastUpdated: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch (e) {
+        console.warn('LocalStorage tidak dapat diakses:', e);
+    }
+}
+
+function getLocalProgress() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearLocalProgress() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+        console.warn('Gagal mereset localStorage:', e);
+    }
+}
+
+// Inisialisasi sinkronisasi progres DOM ke localStorage saat DOM dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const headerScore = document.getElementById('header-score');
+        const headerMissions = document.getElementById('header-missions');
+        
+        if (headerScore && headerMissions) {
+            const currentScore = parseInt(headerScore.textContent, 10) || 0;
+            const missionsText = headerMissions.textContent.trim();
+            
+            // Simpan state terkini
+            saveLocalProgress({
+                score: currentScore,
+                missionsText: missionsText
+            });
+        }
+
+        // Listener untuk form reset progress agar membersihkan localStorage juga
+        const resetForms = document.querySelectorAll('form[action*="reset-progress"]');
+        resetForms.forEach(form => {
+            form.addEventListener('submit', () => {
+                clearLocalProgress();
+            });
+        });
+    } catch (err) {
+        console.error('Error pada sinkronisasi localStorage:', err);
+    }
+});
+

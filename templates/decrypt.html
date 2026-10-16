@@ -14,28 +14,67 @@
         <h1 class="page-title">Laboratorium Dekripsi Pesan</h1>
         <p class="page-desc">
             Pecahkan dan pulihkan pesan rahasia dari deretan angka cipherteks menggunakan fungsi invers matematika 
-            <span class="font-mono text-emerald">D(y) = (y - 3) / 2</span>.
+            <span class="font-mono text-emerald">{{ formula_info.inv_formula }}</span> secara berurutan.
         </p>
     </div>
 
-    <!-- Panel Rumus Invers Referensi -->
-    <div class="formula-banner-single">
+    <!-- Rangkaian Teori Matematis (Komposisi & Invers) -->
+    <div class="formula-banner-grid">
+        <div class="formula-box comp-card">
+            <span class="formula-box-tag text-accent">KOMPOSISI ENKRIPSI ASAL: (g &#8728; f)(x)</span>
+            <div class="formula-box-math font-mono">{{ formula_info.encrypt_formula }}</div>
+            <div class="formula-box-sub text-muted">Berdasarkan parameter a = {{ param_a }}, b = {{ param_b }}</div>
+        </div>
+
         <div class="formula-box inv-card">
             <div class="formula-box-header">
-                <span class="formula-box-tag text-emerald">FUNGSI INVERS PEMULIH SANDI: D(y)</span>
+                <span class="formula-box-tag text-emerald">FUNGSI INVERS PEMULIH: D(y)</span>
                 <span class="badge badge-outline">BIJEKTIF 1-1</span>
             </div>
-            <div class="formula-box-math font-mono">D(y) = (y - 3) / 2</div>
-            <div class="formula-box-sub text-muted">
-                Diturunkan dari: $y = 2x + 3 \iff y - 3 = 2x \iff x = \frac{y - 3}{2}$. Mengembalikan nilai alfabet asli $x \in [1, 26]$.
-            </div>
+            <div class="formula-box-math font-mono">{{ formula_info.inv_formula }}</div>
+            <div class="formula-box-sub text-muted">Diturunkan dari y = ax + c &hArr; x = (y - c)/a</div>
         </div>
     </div>
 
     <!-- Form Input & Kontrol -->
     <div class="lab-main-card">
         <form action="{{ url_for('decrypt_lab') }}" method="POST" id="decrypt-form">
-            <div class="form-group">
+            
+            <!-- Parameter Dekripsi Kustom -->
+            <div class="param-input-card">
+                <div class="param-header">
+                    <span class="card-icon-dot"></span>
+                    <strong class="font-bold">PARAMETER FUNGSI ASAL (a dan b):</strong>
+                    <span class="badge badge-outline">Sesuaikan dengan Enkriptor</span>
+                </div>
+                <div class="param-row-grid">
+                    <div class="param-col">
+                        <label for="param_a" class="param-label">Koefisien <em>a</em> (a &ne; 0):</label>
+                        <input type="number" 
+                               name="param_a" 
+                               id="param_a" 
+                               class="form-control font-mono param-input" 
+                               value="{{ param_a }}" 
+                               required 
+                               step="1">
+                        <small class="text-muted">Pembagi pada fungsi invers</small>
+                    </div>
+                    <div class="param-col">
+                        <label for="param_b" class="param-label">Konstanta <em>b</em>:</label>
+                        <input type="number" 
+                               name="param_b" 
+                               id="param_b" 
+                               class="form-control font-mono param-input" 
+                               value="{{ param_b }}" 
+                               required 
+                               step="1">
+                        <small class="text-muted">Konstanta f(x) = ax + b</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Cipherteks -->
+            <div class="form-group mt-3">
                 <div class="label-with-demo">
                     <label for="ciphertext-input" class="form-label">
                         Ketik Deretan Angka Cipherteks:
@@ -51,13 +90,13 @@
                            name="ciphertext" 
                            id="ciphertext-input" 
                            class="form-control font-mono" 
-                           placeholder="Masukkan angka dipisahkan spasi (contoh: 5 25 45 atau 5 25 45 | 7 19 41 5)" 
+                           placeholder="Masukkan angka dipisahkan spasi (contoh: 5 25 45 atau 5 25 45 3 11 21 5)" 
                            value="{{ input_text }}" 
                            required 
                            autocomplete="off">
                 </div>
                 <small class="form-hint">
-                    Format: Angka-angka ganjil (5 s.d. 55) dipisahkan oleh spasi. Gunakan simbol '|' sebagai spasi pemisah antar kata.
+                    Format: Deretan bilangan bulat dipisahkan spasi. Token yang menghasilkan x=0 akan dipulihkan menjadi spasi.
                 </small>
             </div>
 
@@ -73,10 +112,12 @@
             </div>
         </form>
 
-        <!-- Hasil Dekripsi -->
+        <!-- Hasil Dekripsi Runtut -->
         {% if result %}
             {% if result.success %}
                 <div class="result-display-area" id="decryption-results">
+                    
+                    <!-- 1. Header Status & Cipherteks yang Diproses -->
                     <div class="result-success-header">
                         <div class="status-indicator">
                             <span class="status-dot"></span>
@@ -85,6 +126,7 @@
                         <span class="badge badge-classified">INTELLIGENCE REVEALED</span>
                     </div>
 
+                    <!-- 2. Pesan Asli (Plainteks) -->
                     <div class="output-box-group">
                         <label class="output-label">HASIL PESAN ASLI (PLAINTEKS):</label>
                         <div class="output-display">
@@ -96,19 +138,39 @@
                         </div>
                     </div>
 
-                    <!-- Accordion Langkah Perhitungan Invers -->
+                    <!-- 3. Rangkaian Berurutan: Parameter, Komposisi, & Penurunan Invers -->
+                    <div class="derivation-panel intel-card">
+                        <div class="intel-card-header">
+                            <span class="card-icon-dot"></span>
+                            <h3 class="intel-card-title">URUTAN PENURUNAN MATEMATIS FUNGSI INVERS</h3>
+                        </div>
+                        <div class="derivation-steps-list">
+                            {% for d in result.derivation_steps %}
+                                <div class="derivation-item">
+                                    <div class="derivation-step-num font-mono">LANGKAH {{ d.step }}</div>
+                                    <div class="derivation-main">
+                                        <div class="derivation-label text-muted">{{ d.label }}</div>
+                                        <div class="derivation-expr font-mono font-bold text-accent">{{ d.expr }}</div>
+                                        <div class="derivation-note text-sm">{{ d.note }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- 4. Rincian Langkah Pemulihan Karakter demi Karakter -->
                     <div class="accordion-section">
                         <button type="button" class="accordion-toggle" id="btn-toggle-dec-steps" onclick="toggleAccordion('dec-steps-container', this)">
                             <div class="accordion-title-group">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                                <span class="font-bold">Lihat Rincian Langkah Perhitungan Invers (Dinamis)</span>
+                                <span class="font-bold">Lihat Langkah Pemulihan Token Cipherteks (Dinamis)</span>
                             </div>
                             <span class="accordion-status">Buka / Tutup</span>
                         </button>
 
                         <div class="accordion-body" id="dec-steps-container">
                             <div class="steps-intro">
-                                Menampilkan proses pembalikan setiap angka cipherteks $y$ ke rumus invers $D(y) = \frac{y - 3}{2}$, verifikasi keutuhan bilangan bulat $x \in [1, 26]$, hingga konversi ke huruf alfabet asli.
+                                Menampilkan proses pembalikan setiap angka cipherteks <em>y</em> ke fungsi invers <em>{{ result.formula_info.inv_formula }}</em>, verifikasi keutuhan bilangan bulat <em>x</em>, hingga pemetaan ke simbol alfabet/spasi.
                             </div>
 
                             <div class="scroll-hint">
@@ -120,11 +182,11 @@
                                     <thead>
                                         <tr>
                                             <th>No</th>
-                                            <th>Token Cipher ($y$)</th>
-                                            <th>Pengurangan: $(y - 3)$</th>
-                                            <th>Pembagian: $(y - 3)/2$</th>
-                                            <th>Hasil Nilai $x$</th>
-                                            <th>Konversi Huruf ($1 \to \text{A}$)</th>
+                                            <th>Token (y)</th>
+                                            <th>Pengurangan</th>
+                                            <th>Pembagian / Invers</th>
+                                            <th>Nilai x</th>
+                                            <th>Karakter Hasil</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -149,28 +211,26 @@
                             <!-- Penjelasan Rinci Per Token -->
                             <div class="detailed-cards-grid">
                                 {% for step in result.steps %}
-                                    {% if not step.is_space %}
-                                        <div class="step-card">
-                                            <div class="step-card-header">
-                                                <span class="step-num font-mono">#{{ step.index }}</span>
-                                                <span class="step-letter font-bold font-mono">y = {{ step.y }}</span>
-                                                <span class="step-val text-emerald font-bold">&rarr; {{ step.char }}</span>
+                                    <div class="step-card">
+                                        <div class="step-card-header">
+                                            <span class="step-num font-mono">#{{ step.index }}</span>
+                                            <span class="step-letter font-bold font-mono">y = {{ step.token }}</span>
+                                            <span class="step-val text-emerald font-bold">&rarr; {{ step.char }}</span>
+                                        </div>
+                                        <div class="step-card-body">
+                                            <div class="step-calc-line">
+                                                <span class="calc-label text-cyan">Operasi:</span>
+                                                <span class="calc-formula font-mono">{{ step.sub_calc }}</span>
                                             </div>
-                                            <div class="step-card-body">
-                                                <div class="step-calc-line">
-                                                    <span class="calc-label text-cyan">1. Kurangi 3:</span>
-                                                    <span class="calc-formula font-mono">{{ step.sub_calc }}</span>
-                                                </div>
-                                                <div class="step-calc-line">
-                                                    <span class="calc-label text-purple">2. Bagi 2:</span>
-                                                    <span class="calc-formula font-mono">{{ step.div_calc }}</span>
-                                                </div>
-                                                <div class="step-summary-line text-cyan font-bold">
-                                                    Huruf: {{ step.char }} (Posisi ke-{{ step.inv_result }})
-                                                </div>
+                                            <div class="step-calc-line">
+                                                <span class="calc-label text-purple">Hasil Invers:</span>
+                                                <span class="calc-formula font-mono">{{ step.div_calc }}</span>
+                                            </div>
+                                            <div class="step-summary-line text-cyan font-bold">
+                                                Karakter: {{ step.char }} (x = {{ step.inv_result }})
                                             </div>
                                         </div>
-                                    {% endif %}
+                                    </div>
                                 {% endfor %}
                             </div>
 

@@ -1,110 +1,131 @@
 """
-encrypt.py - Modul Pemrosesan Enkripsi dan Rincian Langkah Matematis
+encrypt.py - Modul Pemrosesan Enkripsi dengan Parameter Kustom
 
 Tanggung jawab:
-- Memvalidasi pesan asli (plaintext).
-- Mengonversi karakter menjadi angka x (A=1 ... Z=26).
-- Menerapkan f(x) = 2x + 1.
-- Menerapkan g(f(x)) = f(x) + 2 = 2x + 3.
-- Menghasilkan representasi cipherteks yang dipisahkan spasi (dan '|' untuk spasi antar kata).
+- Memvalidasi pesan asli (plaintext) dan parameter a, b.
+- Mengonversi karakter ke angka x: A–Z → +1..+26, a–z → -1..-26, spasi → 0.
+- Menerapkan f(x) = ax + b, lalu g(f(x)) = f(x) + 2.
+- Menghasilkan cipherteks bertanda (positif, negatif, nol) dipisahkan spasi.
+- Spasi antar kata direpresentasikan sebagai token angka 0.
 - Menghasilkan rincian langkah perhitungan matematis dinamis.
 """
 
 from typing import Dict, Any, List
-from cipher import char_to_num, f, g, g_comp_f, validate_character_support, get_formula_metadata
+from cipher import (
+    char_to_num, f, g, g_comp_f, encrypt_val,
+    validate_character_support, get_formula_metadata,
+    DEFAULT_A, DEFAULT_B
+)
+
+# Batas nilai a dan b yang diizinkan
+A_MAX = 1000
+B_MIN = -1000
+B_MAX = 1000
 
 
-def encrypt_message(plaintext: str) -> Dict[str, Any]:
+def _validate_params(a, b) -> Dict[str, Any]:
+    """Validasi parameter a dan b. Mengembalikan dict error jika tidak valid."""
+    try:
+        a = int(a)
+    except (TypeError, ValueError):
+        return {"error": "Koefisien a harus berupa bilangan bulat."}
+    try:
+        b = int(b)
+    except (TypeError, ValueError):
+        return {"error": "Konstanta b harus berupa bilangan bulat."}
+    if a == 0:
+        return {"error": "Koefisien a tidak boleh 0 — fungsi f(x) = 0·x + b tidak memiliki invers."}
+    if abs(a) > A_MAX:
+        return {"error": f"Nilai koefisien a terlalu besar (batas: ±{A_MAX})."}
+    if not (B_MIN <= b <= B_MAX):
+        return {"error": f"Nilai konstanta b di luar batas yang diizinkan ({B_MIN}..{B_MAX})."}
+    return {"a": a, "b": b}
+
+
+def encrypt_message(plaintext: str, a: int = DEFAULT_A, b: int = DEFAULT_B) -> Dict[str, Any]:
     """
-    Mengenkripsi teks asli (plaintext) menggunakan komposisi fungsi E(x) = g(f(x)) = 2x + 3.
-    
+    Mengenkripsi teks menggunakan komposisi fungsi E(x) = g(f(x)) = ax + (b+2).
+
+    Pemetaan karakter:
+      A–Z → +1..+26  (kapital = positif)
+      a–z → -1..-26  (kecil   = negatif)
+      spasi → 0      (spasi   = nol, dimunculkan sebagai token '0')
+
     Args:
-        plaintext: String pesan yang akan dienkripsi.
-        
+        plaintext : String pesan yang akan dienkripsi.
+        a         : Koefisien f(x) = ax + b  (default 2).
+        b         : Konstanta  f(x) = ax + b  (default 1).
+
     Returns:
-        dict berisi:
-        - success (bool)
-        - plaintext (str)
-        - ciphertext (str)
-        - tokens (list)
-        - steps (list of dict)
-        - formula_info (dict)
-        - error (str, jika gagal)
+        dict berisi success, plaintext, ciphertext, tokens, steps,
+        formula_info, a, b, dan error (jika gagal).
     """
+    # Validasi parameter
+    param = _validate_params(a, b)
+    if "error" in param:
+        return {"success": False, "error": param["error"]}
+    a, b = param["a"], param["b"]
+
     if not isinstance(plaintext, str):
-        return {
-            "success": False,
-            "error": "Pesan harus berupa teks string."
-        }
-    
+        return {"success": False, "error": "Pesan harus berupa teks string."}
+
     trimmed = plaintext.strip()
     if not trimmed:
-        return {
-            "success": False,
-            "error": "Pesan asli tidak boleh kosong. Masukkan setidaknya satu kata."
-        }
-    
+        return {"success": False, "error": "Pesan asli tidak boleh kosong. Masukkan setidaknya satu karakter."}
+
     if len(plaintext) > 200:
+        return {"success": False, "error": "Panjang pesan melebihi batas maksimal (200 karakter)."}
+
+    # Validasi karakter
+    unsupported = {ch for ch in plaintext if not validate_character_support(ch)}
+    if unsupported:
+        chars_display = ", ".join(f"'{c}'" for c in sorted(unsupported))
         return {
             "success": False,
-            "error": "Panjang pesan melebihi batas maksimal (200 karakter)."
+            "error": (
+                f"Karakter tidak didukung: {chars_display}. "
+                "Sistem mendukung huruf A–Z (kapital), a–z (kecil), dan spasi."
+            )
         }
-    
-    # Validasi karakter: Hanya huruf alfabet dan spasi
-    unsupported_chars = set()
-    for char in plaintext:
-        if not validate_character_support(char):
-            unsupported_chars.add(char)
-            
-    if unsupported_chars:
-        chars_display = ", ".join(f"'{c}'" for c in sorted(unsupported_chars))
-        return {
-            "success": False,
-            "error": f"Karakter tidak didukung ditemukan: {chars_display}. Sistem hanya mendukung huruf alfabet (A-Z) dan spasi."
-        }
-    
-    tokens = []
-    steps = []
-    
-    # Proses enkripsi karakter per karakter
+
+    tokens: List[str] = []
+    steps: List[Dict] = []
+    c = b + 2   # konstanta komposisi: E(x) = ax + c
+
     for idx, char in enumerate(plaintext):
         if char == ' ':
-            tokens.append("|")
+            # Spasi → x=0 → E(0) = a*0 + c = c
+            # Kita simpan sebagai token angka biasa agar bisa dibedakan
+            e_space = encrypt_val(0, a, b)
+            tokens.append(str(e_space))
             steps.append({
                 "index": idx + 1,
                 "char": "SPASI",
                 "is_space": True,
-                "x": None,
-                "f_calc": "-",
-                "f_val": "-",
-                "g_calc": "-",
-                "g_val": "-",
-                "comp_calc": "-",
-                "final_val": "|",
-                "explanation": "Spasi dipertahankan sebagai pemisah kata '|'."
+                "x": 0,
+                "f_calc": f"a·0 + {b} = {b}",
+                "f_val": b,
+                "g_calc": f"{b} + 2 = {c}",
+                "g_val": c,
+                "comp_calc": f"a·0 + {c} = {e_space}",
+                "final_val": e_space,
+                "explanation": f"Spasi → x=0. E(0) = {a}·0 + {c} = {e_space}."
             })
         else:
-            is_upper = char.isupper()
             x = char_to_num(char)
-            
-            # Langkah f(x)
-            f_val = f(x)
-            f_calc = f"2({x}) + 1 = {f_val}"
-            
-            # Langkah g(f(x))
+            f_val = f(x, a, b)
             g_val = g(f_val)
+            comp_val = g_comp_f(x, a, b)
+
+            f_calc = f"{a}·({x}) + {b} = {f_val}"
             g_calc = f"{f_val} + 2 = {g_val}"
-            
-            # Komposisi langsung (g o f)(x) = 2x + 3
-            comp_val = g_comp_f(x)
-            comp_calc = f"2({x}) + 3 = {comp_val}"
-            
+            comp_calc = f"{a}·({x}) + {c} = {comp_val}"
+
             tokens.append(str(comp_val))
             steps.append({
                 "index": idx + 1,
                 "char": char,
                 "is_space": False,
-                "is_upper": is_upper,
                 "x": x,
                 "f_calc": f_calc,
                 "f_val": f_val,
@@ -113,20 +134,23 @@ def encrypt_message(plaintext: str) -> Dict[str, Any]:
                 "comp_calc": comp_calc,
                 "final_val": comp_val,
                 "explanation": (
-                    f"Huruf '{char}' \u2192 Nilai x = {x}. "
-                    f"Tahap 1: f({x}) = 2({x}) + 1 = {f_val}. "
-                    f"Tahap 2: g({f_val}) = {f_val} + 2 = {g_val}. "
-                    f"Komposisi: (g \u2218 f)({x}) = 2({x}) + 3 = {comp_val}."
+                    f"'{char}' → x={x}. "
+                    f"f({x})={a}·({x})+{b}={f_val}. "
+                    f"g({f_val})={f_val}+2={g_val}. "
+                    f"E({x})={a}·({x})+{c}={comp_val}."
                 )
             })
-            
+
     ciphertext = " ".join(tokens)
-    
+    formula_info = get_formula_metadata(a, b)
+
     return {
         "success": True,
         "plaintext": plaintext,
         "ciphertext": ciphertext,
         "tokens": tokens,
         "steps": steps,
-        "formula_info": get_formula_metadata()
+        "formula_info": formula_info,
+        "a": a,
+        "b": b,
     }

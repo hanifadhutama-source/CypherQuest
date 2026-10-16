@@ -1,6 +1,7 @@
 """
 app.py - Aplikasi Utama Flask CipherQuest
 CipherQuest — Decode the Message, Complete the Mission
+Game Edukasi Kriptografi Matematika: Komposisi & Invers Fungsi
 """
 
 import os
@@ -13,9 +14,10 @@ from flask import (
 from config import Config
 from database import (
     init_db, get_player_stats, get_missions_list,
-    get_mission_by_id, submit_mission_answer, reset_progress
+    get_mission_for_session, regenerate_mission_question,
+    submit_mission_answer, reset_progress
 )
-from cipher import get_formula_metadata
+from cipher import get_formula_metadata, DEFAULT_A, DEFAULT_B
 from encrypt import encrypt_message
 from decrypt import decrypt_ciphertext
 
@@ -40,7 +42,7 @@ def ensure_session_identity():
 
 @app.context_processor
 def inject_global_game_data():
-    """Menyediakan data statistik pemain dan metadata rumus ke seluruh template."""
+    """Menyediakan data statistik pemain dan metadata rumus default ke seluruh template."""
     player_id = session.get('player_id', '')
     stats = get_player_stats(player_id)
     return {
@@ -73,35 +75,36 @@ def missions():
 
 @app.route('/mission/<int:mission_id>', methods=['GET', 'POST'])
 def mission_detail(mission_id: int):
-    """Halaman Detail dan Pengerjaan Misi."""
+    """Halaman Detail dan Pengerjaan Misi dengan Soal Dinamis Tersimpan."""
     player_id = session.get('player_id', '')
-    missions_list = get_missions_list(player_id)
     
-    # Cari misi yang sesuai
-    mission = None
-    for m in missions_list:
-        if m['id'] == mission_id:
-            mission = m
-            break
-            
+    # Ambil misi aktif untuk sesi pemain
+    mission = get_mission_for_session(player_id, mission_id)
     if not mission:
         abort(404)
-        
-    if not mission['is_unlocked']:
+
+    # Cek status lock/unlock
+    missions_list = get_missions_list(player_id)
+    is_unlocked = False
+    for m in missions_list:
+        if m['id'] == mission_id:
+            is_unlocked = m['is_unlocked']
+            break
+
+    if not is_unlocked:
         flash("Misi ini masih terkunci! Selesaikan misi sebelumnya terlebih dahulu.", "warning")
         return redirect(url_for('missions'))
-        
+
     if request.method == 'POST':
         user_answer = request.form.get('answer', '')
         used_hint = request.form.get('used_hint', '0') == '1'
-        
+
         if not user_answer.strip():
             flash("Silakan masukkan jawaban terlebih dahulu.", "danger")
             return redirect(url_for('mission_detail', mission_id=mission_id))
-            
+
         result = submit_mission_answer(player_id, mission_id, user_answer, used_hint=used_hint)
-        
-        # Simpan hasil sementara di sesi untuk ditampilkan di halaman hasil (PRG Pattern)
+
         session['last_result'] = {
             "mission_id": mission_id,
             "mission_title": mission['title'],
@@ -115,8 +118,17 @@ def mission_detail(mission_id: int):
             "next_mission_id": mission_id + 1 if mission_id < 3 else None
         }
         return redirect(url_for('mission_result'))
-        
+
     return render_template('mission_detail.html', mission=mission)
+
+
+@app.route('/mission/<int:mission_id>/new-question', methods=['POST'])
+def new_mission_question(mission_id: int):
+    """Mengacak soal baru secara eksplisit atas permintaan pemain."""
+    player_id = session.get('player_id', '')
+    regenerate_mission_question(player_id, mission_id)
+    flash("Markas Intelijen telah mengirimkan transmisi target baru untuk misi ini!", "info")
+    return redirect(url_for('mission_detail', mission_id=mission_id))
 
 
 @app.route('/mission/result')
@@ -130,52 +142,95 @@ def mission_result():
 
 @app.route('/encrypt', methods=['GET', 'POST'])
 def encrypt_lab():
-    """Halaman Laboratorium Enkripsi Pesan."""
+    """Halaman Laboratorium Enkripsi Pesan dengan Parameter Kustom."""
     result = None
     input_text = ""
     
+    # Ambil parameter kustom a dan b
+    raw_a = request.form.get('param_a') or request.args.get('a') or str(DEFAULT_A)
+    raw_b = request.form.get('param_b') or request.args.get('b') or str(DEFAULT_B)
+
+    try:
+        a_val = int(raw_a)
+    except (ValueError, TypeError):
+        a_val = DEFAULT_A
+
+    try:
+        b_val = int(raw_b)
+    except (ValueError, TypeError):
+        b_val = DEFAULT_B
+
     if request.method == 'POST':
         input_text = request.form.get('plaintext', '')
-        result = encrypt_message(input_text)
-        
-    # Dukungan demo query param ?demo=aku
+        result = encrypt_message(input_text, a=a_val, b=b_val)
+
     if request.method == 'GET' and request.args.get('demo') == 'aku':
         input_text = "AKU"
-        result = encrypt_message(input_text)
-        
-    return render_template('encrypt.html', result=result, input_text=input_text)
+        a_val, b_val = DEFAULT_A, DEFAULT_B
+        result = encrypt_message(input_text, a=a_val, b=b_val)
+
+    formula_info = get_formula_metadata(a_val, b_val)
+    return render_template(
+        'encrypt.html',
+        result=result,
+        input_text=input_text,
+        param_a=a_val,
+        param_b=b_val,
+        formula_info=formula_info
+    )
 
 
 @app.route('/decrypt', methods=['GET', 'POST'])
 def decrypt_lab():
-    """Halaman Laboratorium Dekripsi Pesan."""
+    """Halaman Laboratorium Dekripsi Pesan dengan Parameter Kustom dan Langkah Penurunan."""
     result = None
     input_text = ""
-    
+
+    # Ambil parameter kustom a dan b
+    raw_a = request.form.get('param_a') or request.args.get('a') or str(DEFAULT_A)
+    raw_b = request.form.get('param_b') or request.args.get('b') or str(DEFAULT_B)
+
+    try:
+        a_val = int(raw_a)
+    except (ValueError, TypeError):
+        a_val = DEFAULT_A
+
+    try:
+        b_val = int(raw_b)
+    except (ValueError, TypeError):
+        b_val = DEFAULT_B
+
     if request.method == 'POST':
         input_text = request.form.get('ciphertext', '')
-        result = decrypt_ciphertext(input_text)
-        
-    # Dukungan demo query param ?demo=aku
+        result = decrypt_ciphertext(input_text, a=a_val, b=b_val)
+
     if request.method == 'GET' and request.args.get('demo') == 'aku':
         input_text = "5 25 45"
-        result = decrypt_ciphertext(input_text)
-        
-    return render_template('decrypt.html', result=result, input_text=input_text)
+        a_val, b_val = DEFAULT_A, DEFAULT_B
+        result = decrypt_ciphertext(input_text, a=a_val, b=b_val)
+
+    formula_info = get_formula_metadata(a_val, b_val)
+    return render_template(
+        'decrypt.html',
+        result=result,
+        input_text=input_text,
+        param_a=a_val,
+        param_b=b_val,
+        formula_info=formula_info
+    )
 
 
 @app.route('/tutorial')
 def tutorial():
     """Halaman Tutorial Materi Kriptografi, Komposisi Fungsi, dan Invers."""
-    # Sediakan contoh live "AKU"
-    demo_enc = encrypt_message("AKU")
-    demo_dec = decrypt_ciphertext("5 25 45")
+    demo_enc = encrypt_message("AKU", a=DEFAULT_A, b=DEFAULT_B)
+    demo_dec = decrypt_ciphertext("5 25 45", a=DEFAULT_A, b=DEFAULT_B)
     return render_template('tutorial.html', demo_enc=demo_enc, demo_dec=demo_dec)
 
 
 @app.route('/reset-progress', methods=['POST'])
 def reset_user_progress():
-    """Mereset data progres pemain pada sesi aktif."""
+    """Mereset data progres permainan untuk sesi aktif."""
     player_id = session.get('player_id', '')
     reset_progress(player_id)
     if 'last_result' in session:
@@ -199,7 +254,6 @@ def server_error(e):
 
 
 if __name__ == '__main__':
-    # Memungkinkan binding host (misal 0.0.0.0 untuk HP pada Wi-Fi lokal) dan port melalui environment variable
     host = os.environ.get('FLASK_RUN_HOST', os.environ.get('HOST', '127.0.0.1'))
     port = int(os.environ.get('FLASK_RUN_PORT', os.environ.get('PORT', 5000)))
     debug = os.environ.get('FLASK_DEBUG', '0') in ('1', 'true', 'True')

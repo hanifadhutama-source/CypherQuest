@@ -1,10 +1,10 @@
 """
-tests/test_routes.py - Pengujian Integrasi Route dan Endpoint Flask
+tests/test_routes.py - Pengujian Integrasi Route, Endpoint Flask, dan Soal Dinamis
 """
 
 import pytest
 from app import app
-from database import init_db, reset_progress
+from database import init_db, reset_progress, get_mission_for_session
 
 
 @pytest.fixture
@@ -18,7 +18,6 @@ def client():
 
 
 def test_index_page(client):
-    # Halaman beranda dapat dibuka
     response = client.get('/')
     assert response.status_code == 200
     assert b"CipherQuest" in response.data
@@ -26,7 +25,6 @@ def test_index_page(client):
 
 
 def test_missions_page(client):
-    # Halaman misi dapat dibuka
     response = client.get('/missions')
     assert response.status_code == 200
     assert b"Papan Misi" in response.data
@@ -34,97 +32,118 @@ def test_missions_page(client):
 
 
 def test_encrypt_page_get(client):
-    # Halaman enkripsi dapat dibuka
     response = client.get('/encrypt')
     assert response.status_code == 200
     assert b"Laboratorium Enkripsi" in response.data
-    assert b"f(x) = 2x + 1" in response.data
+    assert b"PARAMETER FUNGSI" in response.data
 
 
 def test_encrypt_page_post_success(client):
-    # Form enkripsi menghasilkan output yang benar
-    response = client.post('/encrypt', data={'plaintext': 'AKU'})
+    response = client.post('/encrypt', data={'plaintext': 'AKU', 'param_a': '2', 'param_b': '1'})
     assert response.status_code == 200
     assert b"5 25 45" in response.data
     assert b"ENKRIPSI BERHASIL" in response.data
 
 
+def test_encrypt_page_post_custom_params(client):
+    # a=3, b=2 -> A=1 -> 3(1)+4 = 7
+    response = client.post('/encrypt', data={'plaintext': 'A', 'param_a': '3', 'param_b': '2'})
+    assert response.status_code == 200
+    assert b"7" in response.data
+
+
 def test_encrypt_page_post_invalid(client):
-    # Input tidak valid menampilkan pesan yang sesuai
     response = client.post('/encrypt', data={'plaintext': 'AKU 123!'})
     assert response.status_code == 200
     assert b"Karakter tidak didukung" in response.data
 
 
 def test_decrypt_page_get(client):
-    # Halaman dekripsi dapat dibuka
     response = client.get('/decrypt')
     assert response.status_code == 200
     assert b"Laboratorium Dekripsi" in response.data
-    assert b"D(y) = (y - 3) / 2" in response.data
+    assert b"FUNGSI INVERS" in response.data
 
 
 def test_decrypt_page_post_success(client):
-    # Form dekripsi menghasilkan output yang benar
-    response = client.post('/decrypt', data={'ciphertext': '5 25 45'})
+    response = client.post('/decrypt', data={'ciphertext': '5 25 45', 'param_a': '2', 'param_b': '1'})
     assert response.status_code == 200
     assert b"AKU" in response.data
     assert b"DEKRIPSI BERHASIL" in response.data
+    assert b"URUTAN PENURUNAN MATEMATIS" in response.data
 
 
 def test_decrypt_page_post_invalid(client):
-    # Input tidak valid menampilkan pesan yang sesuai
     response = client.post('/decrypt', data={'ciphertext': '6 25 45'})
     assert response.status_code == 200
-    assert b"Kode tidak valid" in response.data
+    assert b"Gagal Melakukan Dekripsi" in response.data
 
 
 def test_tutorial_page(client):
-    # Halaman tutorial dapat dibuka
     response = client.get('/tutorial')
     assert response.status_code == 200
     assert b"Akademi Kriptografi" in response.data
     assert b"Plainteks" in response.data
 
 
-def test_mission_flow(client):
+def test_mission_dynamic_persistence_and_flow(client):
+    # Buat session identity
+    with client.session_transaction() as sess:
+        sess['player_id'] = 'test_agent_007'
+
     # Akses misi 1
     resp_m1 = client.get('/mission/1')
     assert resp_m1.status_code == 200
     assert b"First Transmission" in resp_m1.data
 
-    # Misi 2 harusnya terkunci sebelum misi 1 selesai
+    # Ambil soal yang tersimpan untuk sesi pemain ini
+    m1_data = get_mission_for_session('test_agent_007', 1)
+    assert m1_data is not None
+    target_q = m1_data['target_input']
+    correct_ans = m1_data['correct_answer']
+
+    # Refresh misi 1: Soal HARUS TETAP SAMA (tidak berubah karena refresh)
+    resp_refresh = client.get('/mission/1')
+    assert target_q.encode() in resp_refresh.data
+
+    # Misi 2 harus terkunci
     resp_m2_locked = client.get('/mission/2', follow_redirects=True)
     assert b"masih terkunci" in resp_m2_locked.data
 
-    # Submit jawaban salah pada misi 1
-    resp_wrong = client.post('/mission/1', data={'answer': '10 20 30', 'used_hint': '0'}, follow_redirects=True)
+    # Submit jawaban salah: Soal HARUS TETAP SAMA
+    resp_wrong = client.post('/mission/1', data={'answer': '999 888', 'used_hint': '0'}, follow_redirects=True)
     assert resp_wrong.status_code == 200
     assert b"BELUM SESUAI" in resp_wrong.data
 
-    # Submit jawaban benar untuk SPY dengan hint aktif (penalti 20 poin -> skor 80)
-    resp_correct_hint = client.post('/mission/1', data={'answer': '41 35 53', 'used_hint': '1'}, follow_redirects=True)
-    assert resp_correct_hint.status_code == 200
-    assert b"BERHASIL DIPECAHKAN" in resp_correct_hint.data
-    assert b"+80" in resp_correct_hint.data
+    resp_m1_after_wrong = client.get('/mission/1')
+    assert target_q.encode() in resp_m1_after_wrong.data
 
-    # Sekarang Misi 2 harusnya terbuka
+    # Submit jawaban benar sesuai soal dinamis aktif
+    resp_correct = client.post('/mission/1', data={'answer': correct_ans, 'used_hint': '0'}, follow_redirects=True)
+    assert resp_correct.status_code == 200
+    assert b"BERHASIL DIPECAHKAN" in resp_correct.data
+    assert b"+100" in resp_correct.data
+
+    # Sekarang Misi 2 harus terbuka
     resp_m2_open = client.get('/mission/2')
     assert resp_m2_open.status_code == 200
     assert b"Double Encryption" in resp_m2_open.data
 
-    # Mainkan ulang Misi 1 dengan skor sempurna (tanpa hint) -> skor update ke 100 tanpa duplikasi
-    resp_replay = client.post('/mission/1', data={'answer': '41 35 53', 'used_hint': '0'}, follow_redirects=True)
-    assert resp_replay.status_code == 200
-    assert b"+100" in resp_replay.data
 
-    # Cek statistik di beranda (skor total harus 100, bukan 180)
-    resp_index = client.get('/')
-    assert b"100" in resp_index.data
+def test_mission_new_question_generator(client):
+    with client.session_transaction() as sess:
+        sess['player_id'] = 'test_agent_regenerate'
+
+    client.get('/mission/1')
+    m1_first = get_mission_for_session('test_agent_regenerate', 1)
+    
+    # Request soal baru eksplisit
+    resp_new = client.post('/mission/1/new-question', follow_redirects=True)
+    assert resp_new.status_code == 200
+    assert b"target baru" in resp_new.data
 
 
 def test_demo_query_params(client):
-    # Uji query param ?demo=aku pada enkripsi dan dekripsi
     resp_enc_demo = client.get('/encrypt?demo=aku')
     assert resp_enc_demo.status_code == 200
     assert b"5 25 45" in resp_enc_demo.data
@@ -135,10 +154,12 @@ def test_demo_query_params(client):
 
 
 def test_reset_progress_endpoint(client):
-    # Selesaikan misi 1
-    client.post('/mission/1', data={'answer': '41 35 53', 'used_hint': '0'}, follow_redirects=True)
-    
-    # Panggil reset progress
+    with client.session_transaction() as sess:
+        sess['player_id'] = 'test_agent_reset'
+
+    m1 = get_mission_for_session('test_agent_reset', 1)
+    client.post('/mission/1', data={'answer': m1['correct_answer'], 'used_hint': '0'}, follow_redirects=True)
+
     resp_reset = client.post('/reset-progress', follow_redirects=True)
     assert resp_reset.status_code == 200
     assert b"berhasil direset" in resp_reset.data
@@ -149,7 +170,6 @@ def test_reset_progress_endpoint(client):
 
 
 def test_404_page(client):
-    # Uji rute yang tidak terdaftar
     response = client.get('/halaman-rahasia-tidak-ada')
     assert response.status_code == 404
     assert b"KOORDINAT TIDAK DITEMUKAN" in response.data

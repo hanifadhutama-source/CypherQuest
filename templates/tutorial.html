@@ -217,12 +217,21 @@
     <section class="tutorial-section">
         <div class="section-title-wrap">
             <span class="section-step-num font-mono">04</span>
-            <h2 class="section-title">Tabel Pemetaan Nilai Alfabet A=1 s.d. Z=26</h2>
+            <h2 class="section-title">Sistem Pemetaan Simbol (Kapital, Kecil, dan Spasi)</h2>
+        </div>
+
+        <div class="intel-alert-box alert-notice mb-3">
+            <div class="alert-box-content font-mono">
+                <strong>ATURAN PEMETAAN SIMBOL CIPHERQUEST:</strong><br>
+                &bull; <strong>Huruf Kapital A–Z</strong>: Dipetakan ke bilangan bulat positif <strong>+1 s.d. +26</strong>.<br>
+                &bull; <strong>Huruf Kecil a–z</strong>: Dipetakan ke bilangan bulat negatif <strong>-1 s.d. -26</strong>.<br>
+                &bull; <strong>Karakter SPASI</strong>: Dipetakan ke angka <strong>0</strong> &rarr; hasil enkripsi E(0) = a(0) + (b+2) = b + 2.
+            </div>
         </div>
 
         <div class="scroll-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>Geser tabel ke samping untuk melihat seluruh 26 huruf &rarr;</span>
+            <span>Tabel Nilai Huruf Kapital (A=1 s.d. Z=26) &rarr;</span>
         </div>
         <div class="full-alphabet-table-wrap font-mono">
             <table class="alpha-table">
@@ -236,7 +245,7 @@
                 <tbody>
                     <tr>
                         {% for num in range(1, 14) %}
-                            <td class="text-cyan">{{ num }}</td>
+                            <td class="text-cyan">+{{ num }}</td>
                         {% endfor %}
                     </tr>
                 </tbody>
@@ -253,8 +262,38 @@
                 <tbody>
                     <tr>
                         {% for num in range(14, 27) %}
-                            <td class="text-purple">{{ num }}</td>
+                            <td class="text-purple">+{{ num }}</td>
                         {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="alpha-table mt-3">
+                <thead>
+                    <tr>
+                        <th colspan="13" class="text-emerald">HURUF KECIL a–z &amp; SPASI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SPASI</strong></td>
+                        <td>a</td>
+                        <td>b</td>
+                        <td>c</td>
+                        <td>...</td>
+                        <td>x</td>
+                        <td>y</td>
+                        <td>z</td>
+                    </tr>
+                    <tr>
+                        <td class="text-warning font-bold">0</td>
+                        <td class="text-purple">-1</td>
+                        <td class="text-purple">-2</td>
+                        <td class="text-purple">-3</td>
+                        <td class="text-muted">...</td>
+                        <td class="text-purple">-24</td>
+                        <td class="text-purple">-25</td>
+                        <td class="text-purple">-26</td>
                     </tr>
                 </tbody>
             </table>
